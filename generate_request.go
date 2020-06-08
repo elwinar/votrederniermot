@@ -17,13 +17,13 @@ import (
 )
 
 type generateRequest struct {
-	Base     string   `json:"base"`
-	Question string   `json:"question"`
-	Answers  []string `json:"answers"`
-
 	r            *http.Request
 	logger       log15.Logger
 	descriptions map[string]description
+
+	base     string
+	question string
+	answers  []string
 
 	uid   string
 	err   error
@@ -42,20 +42,20 @@ func (r *generateRequest) readPayload() {
 		return
 	}
 
-	err := read(r.r, r)
-	if err != nil {
-		r.err = wrap(err, "reading payload")
-		return
+	r.r.ParseForm()
+
+	r.base = r.r.Form.Get("base")
+	if r.base == "" {
+		r.base = "qvgdm"
 	}
 
-	if r.Base == "" {
-		r.Base = "qvgdm"
-	}
+	r.question = r.r.Form.Get("question")
+	r.answers = r.r.Form["answers"]
 
 	var ok bool
-	r.desc, ok = r.descriptions[r.Base]
+	r.desc, ok = r.descriptions[r.base]
 	if !ok {
-		r.err = fmt.Errorf(`unknown base %q`, r.Base)
+		r.err = fmt.Errorf(`unknown base %q`, r.base)
 		return
 	}
 }
@@ -113,7 +113,7 @@ func (r *generateRequest) writeQuestion() {
 		}),
 		Dot: fixed.P(r.desc.Question.X, r.desc.Question.Y),
 	}
-	d.DrawString(r.Question)
+	d.DrawString(r.question)
 }
 
 func (r *generateRequest) writeAnswers() {
@@ -122,7 +122,7 @@ func (r *generateRequest) writeAnswers() {
 	}
 
 	// Draw the answers.
-	for i := 0; i < len(r.Answers) && i < len(r.desc.Answers); i++ {
+	for i := 0; i < len(r.answers) && i < len(r.desc.Answers); i++ {
 		d := &font.Drawer{
 			Dst: r.image,
 			Src: image.NewUniform(color.White),
@@ -131,6 +131,6 @@ func (r *generateRequest) writeAnswers() {
 			}),
 			Dot: fixed.P(r.desc.Answers[i].X, r.desc.Answers[i].Y),
 		}
-		d.DrawString(r.Answers[i])
+		d.DrawString(r.answers[i])
 	}
 }

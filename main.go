@@ -105,7 +105,7 @@ func (s *service) run(ctx context.Context) {
 	router := httprouter.New()
 	router.NotFound = http.HandlerFunc(s.notFound)
 	router.MethodNotAllowed = http.HandlerFunc(s.methodNotAllowed)
-	router.POST("/", s.root)
+	router.GET("/", s.root)
 
 	s.logger.Debug("registering middlewares")
 	stack := negroni.New()
